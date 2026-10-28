@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阿信电脑同步器 · KEY 授权管理后台</title>
+<style>
+:root {
+  --bg: #0f1115; --bg2: #15181e; --card: #191d24; --card2: #1f242c;
+  --line: #2a303a; --line2: #363d49;
+  --txt: #e6e9ef; --txt2: #98a1b0; --txt3: #6b7484;
+  --pri: #4c8dff; --pri-d: #3a78e8; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --purple: #c084fc;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--txt); font-size: 13px;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  min-height: 100vh;
+  background-image: radial-gradient(1000px 500px at 15% -10%, rgba(76,141,255,.13), transparent 60%),
+                    radial-gradient(800px 400px at 100% 0%, rgba(192,132,252,.08), transparent 55%);
+  background-attachment: fixed;
+}
+input, select, button { font-family: inherit; font-size: 13px; }
+input, select {
+  background: #12151b; color: var(--txt); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(76,141,255,.16); }
+input::placeholder { color: var(--txt3); }
+button {
+  background: var(--card2); color: var(--txt); border: 1px solid var(--line2);
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; transition: all .15s;
+}
+button:hover:not(:disabled) { background: #2a313c; border-color: #454e5d; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.pri { background: var(--pri); border-color: var(--pri); color: #fff; font-weight: 500; }
+button.pri:hover:not(:disabled) { background: var(--pri-d); border-color: var(--pri-d); }
+button.sm { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
+button.danger:hover:not(:disabled) { background: #46202a; border-color: var(--bad); color: #ffb4b4; }
+
+/* ===== 顶栏 ===== */
+.topbar {
+  display: flex; align-items: center; gap: 12px; padding: 12px 22px;
+  border-bottom: 1px solid var(--line); background: rgba(21,24,30,.85);
+  backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5;
+}
+.logo {
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none;
+  background: linear-gradient(135deg, var(--pri), #7c5cff);
+}
+.brand { font-size: 15px; font-weight: 600; letter-spacing: .5px; }
+.brand span { color: var(--txt3); font-weight: 400; font-size: 12px; margin-left: 8px; letter-spacing: 0; }
+.spacer { flex: 1; }
+.who { color: var(--txt2); font-size: 12px; }
+.who b { color: var(--txt); font-weight: 500; }
+.role { display: inline-block; padding: 1px 7px; border-radius: 5px; background: #233047; color: #8ab4ff; font-size: 11px; margin-left: 4px; }
+
+/* ===== 登录 ===== */
+.loginWrap { min-height: calc(100vh - 55px); display: flex; align-items: center; justify-content: center; padding: 30px 20px; }
+.loginCard {
+  width: 380px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 16px; padding: 34px 30px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.45);
+}
+.loginCard .lLogo { width: 46px; height: 46px; border-radius: 13px; margin: 0 auto 14px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--pri), #7c5cff); box-shadow: 0 8px 22px rgba(76,141,255,.32); }
+.lTitle { text-align: center; font-size: 19px; font-weight: 600; letter-spacing: 1px; }
+.lSub { text-align: center; color: var(--txt3); font-size: 12px; margin-top: 5px; letter-spacing: 2px; }
+.field { margin-top: 16px; position: relative; }
+.field label { display: block; color: var(--txt2); font-size: 12px; margin-bottom: 6px; }
+.field input { width: 100%; }
+.field .ic { position: absolute; left: 11px; bottom: 9px; opacity: .5; }
+.field .ic ~ input { padding-left: 33px; }
+.toggleEye { position: absolute; right: 8px; bottom: 6px; background: none; border: none; color: var(--txt3); padding: 4px 6px; }
+.toggleEye:hover { background: none; color: var(--txt); }
+.btnLogin { width: 100%; margin-top: 20px; padding: 11px; font-size: 14px; }
+.alert { display: none; margin-top: 14px; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
+.alert.show { display: block; }
+.alert.err { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #ffb4b4; }
+.alert.ok { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.35); color: #a7f3c6; }
+.alert.info { background: rgba(76,141,255,.1); border: 1px solid rgba(76,141,255,.3); color: #a9c8ff; }
+.lFoot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--txt3); font-size: 11px; line-height: 1.7; }
+
+/* ===== 主面板 ===== */
+.wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 40px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.card h2 { font-size: 13px; font-weight: 600; margin: 0 0 12px; color: var(--txt2); letter-spacing: .5px;
+  display: flex; align-items: center; gap: 8px; }
+.card h2::before { content: ""; width: 3px; height: 13px; border-radius: 2px; background: var(--pri); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; min-width: 92px; }
+.stat b { display: block; font-size: 20px; font-weight: 600; color: #fff; }
+.stat span { color: var(--txt3); font-size: 11px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+th { color: var(--txt3); font-weight: 500; font-size: 11px; letter-spacing: .5px; }
+tbody tr:hover { background: rgba(255,255,255,.02); }
+code { background: #12151b; border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; font-family: Consolas, monospace; font-size: 12px; }
+.st-unused { color: var(--warn); } .st-active { color: var(--ok); } .st-banned { color: var(--bad); } .st-expired { color: var(--purple); }
+.hidden { display: none !important; }
+.small { font-size: 11px; color: var(--txt3); }
+.msg { color: var(--ok); font-size: 12px; } .msg.err { color: var(--bad); }
+.pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.logs { max-height: 250px; overflow: auto; font-family: Consolas, monospace; font-size: 11.5px; color: var(--txt2); }
+.logs div { padding: 4px 0; border-bottom: 1px solid #20252d; }
+.made { margin-top: 10px; line-height: 2; }
+.mask { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(2px); }
+.modal { background: var(--card); border: 1px solid var(--line2); border-radius: 14px; padding: 20px; width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.modal h3 { margin: 0 0 12px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="topbar">
+  <div class="logo">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 8h11a4 4 0 0 1 0 8H8"/><path d="m12 4 4 4-4 4"/>
+    </svg>
+  </div>
+  <div class="brand">阿信电脑同步器<span>KEY 授权管理后台</span></div>
+  <div class="spacer"></div>
+  <span class="who" id="who"></span>
+  <button class="sm hidden" id="btnPwd">修改密码</button>
+  <button class="sm hidden" id="btnLogout">退出登录</button>
+</div>
+
+<!-- 登录 -->
+<div class="loginWrap" id="loginWrap">
+  <div class="loginCard">
+    <div class="lLogo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 8h11a4 4 0 0 1 0 8H8"/><path d="m12 4 4 4-4 4"/>
+      </svg>
+    </div>
+    <div class="lTitle">阿信电脑同步器</div>
+    <div class="lSub">KEY 授权管理后台</div>
+
+    <div class="field">
+      <label for="lu">管理员账号</label>
+      <span class="ic">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#98a1b0" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <input id="lu" placeholder="请输入账号" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="lp">登录密码</label>
+      <span class="ic">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#98a1b0" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </span>
+      <input id="lp" type="password" placeholder="请输入密码" autocomplete="current-password">
+      <button class="toggleEye" id="btnEye" title="显示/隐藏密码">
+        <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <button class="pri btnLogin" id="btnLogin">登 录</button>
+    <div class="alert" id="lmsg"></div>
+
+    <div class="lFoot">
+      <div id="env"></div>
+      <div style="margin-top:6px">首次登录使用服务器 <code>data/owner_password.txt</code> 内的初始密码，登录后强制修改。</div>
+      <div style="margin-top:4px">连续输错 10 次将锁定 15 分钟。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 主面板 -->
+<div id="main" class="wrap hidden">
+  <div class="card">
+    <h2>经营概览</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>生成卡密</h2>
+    <div class="row">
+      <select id="type">
+        <option value="trial">体验卡 (3小时)</option>
+        <option value="day">日卡 (1天)</option>
+        <option value="week">周卡 (7天)</option>
+        <option value="month" selected>月卡 (30天)</option>
+        <option value="year">年卡 (365天)</option>
+      </select>
+      <span class="small">数量</span><input id="count" type="number" value="10" min="1" max="100" style="width:68px">
+      <span class="small">备注</span><input id="note" size="16" placeholder="买家名 / 订单号">
+      <button class="pri" id="btnGen">生成卡密</button>
+      <span id="gmsg" class="msg"></span>
+    </div>
+    <div id="made" class="made"></div>
+  </div>
+
+  <div class="card">
+    <h2>卡密管理</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="q" size="22" placeholder="搜索卡密 / 备注 / 机器码">
+      <select id="ftype"><option value="">全部类型</option>
+        <option value="trial">体验卡</option><option value="day">日卡</option>
+        <option value="week">周卡</option><option value="month">月卡</option><option value="year">年卡</option></select>
+      <select id="fstate"><option value="">全部状态</option>
+        <option value="unused">未使用</option><option value="active">使用中</option>
+        <option value="expired">已到期</option><option value="banned">已封禁</option></select>
+      <button id="btnSearch">查询</button>
+      <button id="btnExport">导出本页 CSV</button>
+      <span id="tmsg" class="msg"></span>
+    </div>
+    <table>
+      <thead><tr><th>卡密</th><th>类型</th><th>状态</th><th>剩余</th><th>到期时间</th><th>机器码</th><th>备注</th><th>操作</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="pager">
+      <button class="sm" id="prev">上一页</button><span id="pinfo" class="small"></span><button class="sm" id="next">下一页</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>会员管理</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="mq" size="20" placeholder="搜索会员 / 机器码">
+      <select id="mfstate"><option value="">全部状态</option>
+        <option value="active">有效</option><option value="expired">已到期</option>
+        <option value="banned">已封禁</option></select>
+      <button id="btnMemberSearch">查询</button>
+      <span id="mmsg" class="msg"></span>
+      <span id="mstats" class="small"></span>
+    </div>
+    <table>
+      <thead><tr><th>会员</th><th>状态</th><th>套餐</th><th>剩余</th><th>到期</th>
+        <th>机器码</th><th>累计付费</th><th>最近登录</th><th>安全码</th><th>操作</th></tr></thead>
+      <tbody id="mbody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>订单管理</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="oq" size="22" placeholder="订单号 / 会员 / 套餐">
+      <input id="ouser" size="14" placeholder="会员名 (精确)">
+      <select id="ofstate"><option value="">全部状态</option>
+        <option value="pending">待支付</option><option value="paid">已支付</option></select>
+      <button id="btnOrderSearch">查询</button>
+      <span class="small">支付通道为 mock 时可用「确认收款」手动开通; 接入真实支付后走异步回调自动开通</span>
+      <span id="omsg" class="msg"></span>
+    </div>
+    <table>
+      <thead><tr><th>订单号</th><th>会员</th><th>套餐</th><th>金额</th><th>状态</th>
+        <th>创建</th><th>支付时间</th><th>操作</th></tr></thead>
+      <tbody id="obody"></tbody>
+    </table>
+  </div>
+
+  <div class="card hidden" id="usersCard">
+    <h2>子账号管理</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="nu" size="12" placeholder="用户名 3-24位">
+      <input id="np" size="12" placeholder="密码 ≥8位">
+      <select id="nr"><option value="admin">admin · 发卡/管理</option><option value="viewer">viewer · 只读</option></select>
+      <input id="nn" size="12" placeholder="备注(经销商名)">
+      <button class="pri" id="btnUserCreate">创建账号</button>
+      <span id="umsg" class="msg"></span>
+    </div>
+    <table>
+      <thead><tr><th>账号</th><th>角色</th><th>状态</th><th>最近登录</th><th>备注</th><th>操作</th></tr></thead>
+      <tbody id="ubody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>操作审计日志</h2>
+    <div class="row" style="margin-bottom:8px">
+      <input id="luser" size="14" placeholder="操作人 / 目标账号">
+      <input id="laction" size="14" placeholder="操作类型 如 LOGIN">
+      <input id="lq" size="18" placeholder="全文关键词">
+      <button class="sm pri" id="btnLogSearch">筛选</button>
+      <button class="sm" id="btnLogs">刷新</button>
+      <span id="lmsg" class="small"></span>
+    </div>
+    <div class="small" style="margin-bottom:6px">记录登录 / 发卡 / 加时长 / 封禁 / 账号变更 等全部管理操作</div>
+    <div class="logs" id="logs"></div>
+  </div>
+</div>
+
+<!-- 加时长 -->
+<div class="mask hidden" id="extMask">
+  <div class="modal">
+    <h3>给卡密加时长</h3>
+    <div class="small" id="extKey" style="margin-bottom:12px"></div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="sm" data-a="1" data-u="hour">+1小时</button>
+      <button class="sm" data-a="1" data-u="day">+1天</button>
+      <button class="sm" data-a="7" data-u="day">+7天</button>
+      <button class="sm" data-a="30" data-u="day">+30天</button>
+      <button class="sm" data-a="365" data-u="day">+365天</button>
+    </div>
+    <div class="row">
+      <span class="small">数量</span><input id="extAmt" type="number" value="30" min="1" max="999" style="width:72px">
+      <span class="small">单位</span>
+      <select id="extUnit">
+        <option value="hour">小时</option><option value="day" selected>天</option>
+        <option value="week">周</option><option value="month">月(30天)</option><option value="year">年(365天)</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:18px; justify-content:flex-end">
+      <button id="extCancel">取消</button><button class="pri" id="extOk">确认加时长</button>
+    </div>
+    <div id="extMsg" class="msg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- 给会员加时长 -->
+<div class="mask hidden" id="mExtMask">
+  <div class="modal">
+    <h3>给会员加时长</h3>
+    <div class="small" id="mExtUser" style="margin-bottom:12px"></div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="sm" data-a="1" data-u="hour">+1小时</button>
+      <button class="sm" data-a="1" data-u="day">+1天</button>
+      <button class="sm" data-a="7" data-u="day">+7天</button>
+      <button class="sm" data-a="30" data-u="day">+30天</button>
+      <button class="sm" data-a="365" data-u="day">+365天</button>
+    </div>
+    <div class="row">
+      <span class="small">数量</span><input id="mExtAmt" type="number" value="30" min="1" max="999" style="width:72px">
+      <span class="small">单位</span>
+      <select id="mExtUnit">
+        <option value="hour">小时</option><option value="day" selected>天</option>
+        <option value="week">周</option><option value="month">月(30天)</option><option value="year">年(365天)</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:18px; justify-content:flex-end">
+      <button id="mExtCancel">取消</button><button class="pri" id="mExtOk">确认加时长</button>
+    </div>
+    <div id="mExtMsg" class="msg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- 改卡密备注 -->
+<div class="mask hidden" id="noteMask">
+  <div class="modal">
+    <h3>修改卡密备注</h3>
+    <div class="small" id="noteKey" style="margin-bottom:12px"></div>
+    <input id="noteVal" maxlength="50" style="width:100%" placeholder="买家名 / 订单号 / 渠道, 最多 50 字">
+    <div class="row" style="margin-top:18px; justify-content:flex-end">
+      <button id="noteCancel">取消</button><button class="pri" id="noteOk">保存备注</button>
+    </div>
+    <div id="noteMsg" class="msg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- 改密码 -->
+<div class="mask hidden" id="pwdMask">
+  <div class="modal">
+    <h3 id="pwdTitle">修改密码</h3>
+    <div class="field"><label for="opw">原密码</label>
+      <input id="opw" type="password" style="width:100%; padding-right:36px" autocomplete="current-password">
+      <button class="toggleEye" id="eyeO" title="显示/隐藏密码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    </div>
+    <div class="field"><label for="npw">新密码（至少 8 位，须含字母和数字）</label>
+      <input id="npw" type="password" style="width:100%; padding-right:36px" autocomplete="new-password">
+      <button class="toggleEye" id="eyeN" title="显示/隐藏密码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    </div>
+    <div class="field"><label for="npw2">确认新密码</label>
+      <input id="npw2" type="password" style="width:100%; padding-right:36px" autocomplete="new-password">
+      <button class="toggleEye" id="eyeN2" title="显示/隐藏密码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    </div>
+    <div class="row" style="margin-top:18px; justify-content:flex-end">
+      <button id="pwdCancel">取消</button><button class="pri" id="pwdOk">确认修改</button>
+    </div>
+    <div id="pwdMsg" class="msg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<script>
+// ============ 工具 (全部 textContent 构建 DOM, 杜绝 innerHTML 注入) ============
+const $ = (id) => document.getElementById(id);
+let ME = null, PAGE = 1, SIZE = 50, TOTAL = 0, ROWS = [];
+
+function el(tag, opts) {
+  const e = document.createElement(tag);
+  if (opts) {
+    if (opts.text != null) e.textContent = String(opts.text);
+    if (opts.cls) e.className = opts.cls;
+    if (opts.style) e.style.cssText = opts.style;
+    if (opts.on) for (const k in opts.on) e.addEventListener(k, opts.on[k]);
+    if (opts.attrs) for (const k in opts.attrs) e.setAttribute(k, opts.attrs[k]);
+  }
+  return e;
+}
+function btn(text, cls, fn) { return el("button", { text, cls: "sm " + (cls || ""), on: { click: fn } }); }
+function setMsg(id, text, ok) {
+  const e = $(id);
+  if (e.classList && e.classList.contains("alert")) {
+    e.textContent = text || "";
+    e.className = "alert show " + (ok ? "ok" : "err");
+  } else { e.textContent = text; e.className = "msg" + (ok ? "" : " err"); }
+}
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: "POST", credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  let d = {};
+  try { d = await r.json(); } catch (e) { d = { ok: false, msg: "响应解析失败 (HTTP " + r.status + ")" }; }
+  if (r.status === 401 || d.need_login) { onLogout(); throw new Error(d.msg || "登录已过期"); }
+  if (d.need_change_password) { ME.must_change = true; openPwd(true); throw new Error(d.msg); }
+  return d;
+}
+function fmtRemain(s) {
+  if (s == null) return "-";
+  s = Math.max(0, Math.floor(s));
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  if (d > 0) return d + "天" + h + "小时";
+  if (h > 0) return h + "小时" + m + "分";
+  return m + "分";
+}
+function stateText(k) {
+  const map = { unused: ["未使用", "st-unused"], active: ["使用中", "st-active"],
+                expired: ["已到期", "st-expired"], banned: ["已封禁", "st-banned"] };
+  const [t, c] = map[k.state] || [k.state, ""];
+  return el("span", { text: t, cls: c });
+}
+
+// ============ 环境自诊断 ============
+(function envCheck() {
+  const box = $("env"), o = location.origin || "(未知)";
+  if (location.protocol === "file:") {
+    box.className = "alert show err";
+    box.textContent = "⚠ 你是直接双击本地文件打开的 (file://)，连不上服务器。请在浏览器输入 http://192.168.3.123:3010/admin";
+    return;
+  }
+  if (location.protocol === "https:") {
+    box.className = "alert show err";
+    box.textContent = "⚠ 当前是 https，但后台是 http 服务，多半是浏览器「自动 HTTPS」升级了。点地址栏锁图标 → 网站设置 → 关闭自动 HTTPS，或换 Firefox。";
+    return;
+  }
+  box.textContent = "后台地址: " + o;
+})();
+
+// ============ 登录 / 登出 ============
+$("btnEye").addEventListener("click", () => {
+  const i = $("lp");
+  i.type = i.type === "password" ? "text" : "password";
+});
+async function doLogin() {
+  const b = $("btnLogin"), u = $("lu").value.trim();
+  if (!u) return setMsg("lmsg", "请输入管理员账号", false);
+  if (!$("lp").value) return setMsg("lmsg", "请输入登录密码", false);
+  b.disabled = true; b.textContent = "登录中...";
+  setMsg("lmsg", "正在连接后台...", true);
+  let r = null;
+  try {
+    r = await fetch("/api/ping", { credentials: "same-origin" });
+  } catch (e) {
+    b.disabled = false; b.textContent = "登 录";
+    return setMsg("lmsg", "连不上后台 " + location.origin + "。请确认：①地址栏是 http://192.168.3.123:3010/admin ②服务器 hzkey.sh 在运行 ③本机与 .123 同网段 ④浏览器没挂代理", false);
+  }
+  if (!r.ok) {
+    b.disabled = false; b.textContent = "登 录";
+    return setMsg("lmsg", "后台返回 HTTP " + r.status + "，说明你打开的页面不是 KEY 服务器。请改用 http://192.168.3.123:3010/admin", false);
+  }
+  let ping = {};
+  try { ping = await r.json(); } catch (e) {
+    b.disabled = false; b.textContent = "登 录";
+    return setMsg("lmsg", "后台响应不是 JSON，说明你打开的页面不是 KEY 服务器。请改用 http://192.168.3.123:3010/admin", false);
+  }
+  if (ping.v !== 2) {
+    b.disabled = false; b.textContent = "登 录";
+    return setMsg("lmsg", "后台版本不是 v2，请重新部署 server.js", false);
+  }
+  try {
+    const r2 = await fetch("/api/admin/login", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u, password: $("lp").value }),
+    });
+    let d = {};
+    try { d = await r2.json(); } catch (e) { d = { ok: false, msg: "响应解析失败" }; }
+    if (!d.ok) {
+      b.disabled = false; b.textContent = "登 录";
+      return setMsg("lmsg", d.msg || "登录失败", false);
+    }
+    ME = { user: d.user, role: d.role, must_change: d.must_change };
+    $("lp").value = "";
+    enterMain();
+    if (d.must_change) openPwd(true);
+  } catch (e) {
+    b.disabled = false; b.textContent = "登 录";
+    setMsg("lmsg", "网络错误: " + e.message, false);
+  }
+}
+function enterMain() {
+  $("loginWrap").classList.add("hidden");
+  $("main").classList.remove("hidden");
+  $("btnLogout").classList.remove("hidden");
+  $("btnPwd").classList.remove("hidden");
+  const w = $("who");
+  w.textContent = "";
+  w.appendChild(el("b", { text: ME.user }));
+  w.appendChild(el("span", { text: ME.role, cls: "role" }));
+  $("usersCard").classList.toggle("hidden", ME.role !== "owner");
+  loadStats(); loadKeys();
+  loadMembers(); loadOrders();
+  if (ME.role === "owner") loadUsers();
+  loadLogs();
+}
+function onLogout() {
+  fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+  ME = null;
+  $("main").classList.add("hidden");
+  $("loginWrap").classList.remove("hidden");
+  $("btnLogout").classList.add("hidden");
+  $("btnPwd").classList.add("hidden");
+  $("who").textContent = "";
+  setMsg("lmsg", "已退出登录", true);
+}
+
+// ============ 卡密 ============
+async function loadStats() {
+  try {
+    const d = await api("/api/admin/stats", {});
+    if (!d.ok) return;
+    const s = d.stats, box = $("stats");
+    box.textContent = "";
+    [["卡密总数", s.total], ["未使用", s.unused], ["使用中", s.active],
+     ["已到期", s.expired], ["已封禁", s.banned], ["试用机器", s.machines]]
+      .forEach(([label, v]) => {
+        const c = el("div", { cls: "stat" });
+        c.appendChild(el("b", { text: v }));
+        c.appendChild(el("span", { text: label }));
+        box.appendChild(c);
+      });
+  } catch (e) {}
+}
+async function loadKeys() {
+  try {
+    const d = await api("/api/admin/keys", {
+      q: $("q").value, type: $("ftype").value, state: $("fstate").value, page: PAGE, size: SIZE,
+    });
+    if (!d.ok) return setMsg("tmsg", d.msg, false);
+    ROWS = d.keys; TOTAL = d.total;
+    setMsg("tmsg", "共 " + TOTAL + " 张", true);
+    $("pinfo").textContent = "第 " + PAGE + " 页 / 共 " + Math.max(1, Math.ceil(TOTAL / SIZE)) + " 页";
+    renderKeys();
+  } catch (e) {}
+}
+function renderKeys() {
+  const tb = $("tbody");
+  tb.textContent = "";
+  ROWS.forEach((k) => {
+    const tr = el("tr");
+    tr.appendChild(el("td", {})).appendChild(el("code", { text: k.key }));
+    tr.appendChild(el("td", { text: k.type_name }));
+    const stTd = el("td", {}); stTd.appendChild(stateText(k));
+    if (k.pending_extend > 0) stTd.appendChild(el("div", { text: "待生效 +" + fmtRemain(k.pending_extend), cls: "small" }));
+    tr.appendChild(stTd);
+    tr.appendChild(el("td", { text: k.remaining == null ? "-" : fmtRemain(k.remaining) }));
+    tr.appendChild(el("td", { text: k.expires, cls: "small" }));
+    const mTd = el("td", {}); mTd.appendChild(el("div", { text: k.machine || "-", cls: "small" }));
+    if (k.rebind_used > 0) mTd.appendChild(el("div", {
+      text: "换绑 " + k.rebind_used + "/" + (k.rebind_max || 3) + " 次", cls: "small" }));
+    tr.appendChild(mTd);
+    tr.appendChild(el("td", { text: k.note || "" }));
+    const op = el("td", {});
+    op.appendChild(btn("加时长", "", () => openExt(k)));
+    op.appendChild(document.createTextNode(" "));
+    if (ME.role !== "viewer") {
+      op.appendChild(btn("改备注", "", () => openNote(k)));
+      op.appendChild(document.createTextNode(" "));
+    }
+    op.appendChild(btn(k.banned ? "解封" : "封禁", k.banned ? "" : "danger", async () => {
+      const d = await api("/api/admin/ban", { key: k.key, banned: !k.banned });
+      if (d.ok) loadKeys(); else alert(d.msg);
+    }));
+    if (k.machine) {
+      op.appendChild(document.createTextNode(" "));
+      op.appendChild(btn("解绑", "", async () => {
+        if (!confirm("解绑后用户可在新机器重新激活。\n注意：换绑会从剩余时长里扣 6 小时，并占用 1 次换绑机会（本卡剩余 " + (k.rebind_left == null ? 3 : k.rebind_left) + " 次）。\n确认解绑？")) return;
+        const d = await api("/api/admin/keys/unbind", { key: k.key });
+        if (d.ok) loadKeys(); else alert(d.msg);
+      }));
+    }
+    if (ME.role === "owner") {
+      op.appendChild(document.createTextNode(" "));
+      op.appendChild(btn("删除", "danger", async () => {
+        if (!confirm("删除卡密 " + k.key + " ？不可恢复")) return;
+        const d = await api("/api/admin/keys/delete", { key: k.key });
+        if (d.ok) loadKeys(); else alert(d.msg);
+      }));
+    }
+    tr.appendChild(op);
+    tb.appendChild(tr);
+  });
+}
+// ============ 会员管理 ============
+let MROWS = [];
+async function loadMembers() {
+  const d = await api("/api/admin/members", {
+    q: $("mq").value.trim(), state: $("mfstate").value, page: 1, size: 200,
+  });
+  if (!d.ok) return setMsg("mmsg", d.msg, false);
+  MROWS = d.members || [];
+  setMsg("mmsg", "共 " + d.total + " 位会员", true);
+  const st = d.stats || {};
+  $("mstats").textContent = "有效 " + (st.active || 0) + " · 到期 " + (st.expired || 0) +
+    " · 封禁 " + (st.banned || 0) + " · 累计收入 ¥" + ((st.revenue || 0) / 100).toFixed(2);
+  renderMembers();
+}
+function memberState(m) {
+  const map = { active: ["有效", "st-active"], expired: ["已到期", "st-expired"],
+                banned: ["已封禁", "st-banned"] };
+  const [t, c] = map[m.state] || [m.state, ""];
+  return el("span", { text: t, cls: c });
+}
+function renderMembers() {
+  const tb = $("mbody");
+  tb.textContent = "";
+  MROWS.forEach((m) => {
+    const tr = el("tr");
+    tr.appendChild(el("td", {})).appendChild(el("code", { text: m.user }));
+    const stTd = el("td", {}); stTd.appendChild(memberState(m));
+    tr.appendChild(stTd);
+    tr.appendChild(el("td", { text: m.plan_name || "-" }));
+    tr.appendChild(el("td", { text: m.remaining > 0 ? fmtRemain(m.remaining) : "-" }));
+    tr.appendChild(el("td", { text: m.expires, cls: "small" }));
+    const mTd = el("td", {});
+    mTd.appendChild(el("div", { text: m.machine || "-", cls: "small" }));
+    if (m.rebind_used > 0)
+      mTd.appendChild(el("div", { text: "换绑 " + m.rebind_used + " 次", cls: "small" }));
+    tr.appendChild(mTd);
+    tr.appendChild(el("td", { text: "¥" + ((m.total_paid || 0) / 100).toFixed(2), cls: "small" }));
+    tr.appendChild(el("td", { text: m.last_login, cls: "small" }));
+    // 安全码只显示"设没设" —— 库里是 scrypt 哈希, 谁也看不到明文, 客服也无从代答
+    tr.appendChild(el("td", { text: m.rc_set ? "已设" : "未设", cls: "small" }));
+    const op = el("td", {});
+    op.appendChild(btn("加时长", "", () => openMemberExt(m)));
+    op.appendChild(document.createTextNode(" "));
+    op.appendChild(btn(m.status === "banned" ? "解封" : "封禁",
+      m.status === "banned" ? "" : "danger", async () => {
+        if (!confirm((m.status === "banned" ? "解封 " : "封禁 ") + m.user + " ？")) return;
+        const d = await api("/api/admin/members/ban",
+          { user: m.user, banned: m.status !== "banned" });
+        if (d.ok) loadMembers(); else alert(d.msg);
+      }));
+    if (m.machine) {
+      op.appendChild(document.createTextNode(" "));
+      op.appendChild(btn("解绑设备", "", async () => {
+        if (!confirm("解绑 " + m.user + " 的设备？\n解绑后该账号下次登录会在新机器上自动绑定，不扣时不计数。")) return;
+        const d = await api("/api/admin/members/unbind", { user: m.user });
+        if (d.ok) loadMembers(); else alert(d.msg);
+      }));
+    }
+    tr.appendChild(op);
+    tb.appendChild(tr);
+  });
+}
+
+// ============ 订单管理 ============
+async function loadOrders() {
+  const d = await api("/api/admin/orders", {
+    status: $("ofstate").value, q: $("oq").value.trim(),
+    user: $("ouser").value.trim(), page: 1, size: 200,
+  });
+  if (!d.ok) return setMsg("omsg", d.msg, false);
+  setMsg("omsg", "共 " + d.total + " 单", true);
+  const tb = $("obody");
+  tb.textContent = "";
+  (d.orders || []).forEach((o) => {
+    const tr = el("tr");
+    tr.appendChild(el("td", {})).appendChild(el("code", { text: o.id }));
+    tr.appendChild(el("td", { text: o.user }));
+    tr.appendChild(el("td", { text: o.plan_name }));
+    tr.appendChild(el("td", { text: "¥" + o.amount_yuan }));
+    const map = { paid: ["已支付", "st-active"], pending: ["待支付", "st-unused"],
+                  closed: ["已关闭", "st-expired"] };
+    const [t, c] = map[o.status] || [o.status, ""];
+    const stTd = el("td", {}); stTd.appendChild(el("span", { text: t, cls: c }));
+    tr.appendChild(stTd);
+    tr.appendChild(el("td", { text: o.created, cls: "small" }));
+    tr.appendChild(el("td", { text: o.paid, cls: "small" }));
+    const op = el("td", {});
+    if (o.status === "pending")
+      op.appendChild(btn("确认收款", "", async () => {
+        if (!confirm("确认订单 " + o.id + " 已收到 ¥" + o.amount_yuan + " ？\n确认后立即为会员开通时长。")) return;
+        const d2 = await api("/api/admin/orders/confirm", { order_id: o.id });
+        if (d2.ok) { loadOrders(); loadMembers(); } else alert(d2.msg);
+      }));
+    tr.appendChild(op);
+    tb.appendChild(tr);
+  });
+}
+
+async function gen() {
+  const d = await api("/api/admin/keys/generate", {
+    type: $("type").value, count: +$("count").value, note: $("note").value,
+  });
+  if (!d.ok) return setMsg("gmsg", d.msg, false);
+  setMsg("gmsg", "已生成 " + d.keys.length + " 张 " + d.card_type, true);
+  const box = $("made");
+  box.textContent = "";
+  d.keys.forEach((k) => box.appendChild(el("code", { text: k, style: "margin-right:6px" })));
+  loadKeys(); loadStats();
+}
+function exportCSV() {
+  const lines = [["卡密", "类型", "状态", "剩余秒", "到期", "机器码", "备注"].join(",")];
+  ROWS.forEach((k) => lines.push([k.key, k.type_name, k.state,
+    k.remaining == null ? "" : k.remaining, k.expires, k.machine, (k.note || "")].join(",")));
+  const a = el("a", { attrs: { href: URL.createObjectURL(new Blob(["\ufeff" + lines.join("\n")],
+    { type: "text/csv;charset=utf-8" })), download: "axin-keys.csv" } });
+  a.click();
+}
+
+// ============ 给会员加时长 ============
+let MEXT_USER = null;
+function openMemberExt(m) {
+  MEXT_USER = m.user;
+  $("mExtUser").textContent = "会员: " + m.user + " · 当前剩余 " +
+    (m.remaining > 0 ? fmtRemain(m.remaining) : "已到期");
+  $("mExtMsg").textContent = "";
+  $("mExtMask").classList.remove("hidden");
+}
+document.querySelectorAll("#mExtMask [data-a]").forEach((b) => {
+  b.addEventListener("click", () => {
+    $("mExtAmt").value = b.dataset.a;
+    $("mExtUnit").value = b.dataset.u;
+  });
+});
+$("mExtCancel").addEventListener("click", () => $("mExtMask").classList.add("hidden"));
+$("mExtOk").addEventListener("click", async () => {
+  if (!MEXT_USER) return;
+  const d = await api("/api/admin/members/extend", {
+    user: MEXT_USER, amount: +$("mExtAmt").value, unit: $("mExtUnit").value,
+  });
+  if (d.ok) {
+    $("mExtMsg").textContent = "已加时长, 现剩余 " + fmtRemain(d.remaining);
+    setTimeout(() => { $("mExtMask").classList.add("hidden"); loadMembers(); }, 700);
+  } else {
+    $("mExtMsg").textContent = d.msg || "失败";
+  }
+});
+
+// ============ 加时长 ============
+let EXT_KEY = null;
+function openExt(k) {
+  EXT_KEY = k.key;
+  $("extKey").textContent = "卡密 " + k.key + " · " + k.type_name + " · " +
+    (k.remaining == null ? "未激活" : "剩 " + fmtRemain(k.remaining));
+  $("extMsg").textContent = "";
+  $("extMask").classList.remove("hidden");
+}
+async function doExtend() {
+  const amount = +$("extAmt").value, unit = $("extUnit").value;
+  setMsg("extMsg", "处理中...", true);
+  const d = await api("/api/admin/keys/extend", { key: EXT_KEY, amount, unit });
+  if (!d.ok) return setMsg("extMsg", d.msg, false);
+  setMsg("extMsg", d.msg, true);
+  loadKeys(); loadStats(); loadLogs();
+  setTimeout(() => $("extMask").classList.add("hidden"), 900);
+}
+
+// ============ 改卡密备注 ============
+let NOTE_KEY = null;
+function openNote(k) {
+  NOTE_KEY = k.key;
+  $("noteKey").textContent = "卡密 " + k.key + " · " + k.type_name;
+  $("noteVal").value = k.note || "";
+  $("noteMsg").textContent = "";
+  $("noteMask").classList.remove("hidden");
+  $("noteVal").focus();
+  $("noteVal").select();
+}
+async function doNote() {
+  if (!NOTE_KEY) return;
+  setMsg("noteMsg", "保存中...", true);
+  const d = await api("/api/admin/keys/note", { key: NOTE_KEY, note: $("noteVal").value.trim() });
+  if (!d.ok) return setMsg("noteMsg", d.msg || "保存失败", false);
+  $("noteMask").classList.add("hidden");
+  loadKeys();
+}
+
+// ============ 子账号 ============
+async function loadUsers() {
+  try {
+    const d = await api("/api/admin/users", {});
+    if (!d.ok) return;
+    const tb = $("ubody");
+    tb.textContent = "";
+    d.users.forEach((u) => {
+      const tr = el("tr");
+      tr.appendChild(el("td", { text: u.user }));
+      tr.appendChild(el("td", {})).appendChild(el("span", { text: u.role, cls: "role" }));
+      tr.appendChild(el("td", { text: u.disabled ? "已禁用" : (u.must_change ? "待改密码" : "正常") }));
+      tr.appendChild(el("td", { text: u.last_login, cls: "small" }));
+      tr.appendChild(el("td", { text: u.note || "" }));
+      const op = el("td", {});
+      if (u.user === ME.user) {
+        // 改自己的密码必须验证原密码, 所以走「修改密码」弹窗, 不提供免原密码的重置入口
+        op.appendChild(btn("修改密码", "", () => openPwd(false)));
+      } else {
+        op.appendChild(btn("重置密码", "", async () => {
+          const pw = prompt("输入 " + u.user + " 的新密码（至少 8 位，须含字母和数字）");
+          if (!pw) return;
+          const r = await api("/api/admin/users/reset_password", { username: u.user, password: pw });
+          if (r.ok) { setMsg("umsg", "已重置，对方下次登录需改密码", true); loadUsers(); } else alert(r.msg);
+        }));
+        op.appendChild(document.createTextNode(" "));
+        op.appendChild(btn(u.disabled ? "启用" : "禁用", "", async () => {
+          const r = await api("/api/admin/users/disable", { username: u.user, disabled: !u.disabled });
+          if (r.ok) loadUsers(); else alert(r.msg);
+        }));
+        op.appendChild(document.createTextNode(" "));
+        op.appendChild(btn("删除", "danger", async () => {
+          if (!confirm("删除账号 " + u.user + " ？")) return;
+          const r = await api("/api/admin/users/delete", { username: u.user });
+          if (r.ok) loadUsers(); else alert(r.msg);
+        }));
+      }
+      tr.appendChild(op);
+      tb.appendChild(tr);
+    });
+  } catch (e) {}
+}
+
+// ============ 审计日志 ============
+async function loadLogs() {
+  try {
+    const d = await api("/api/admin/audit", {
+      limit: 200, user: $("luser").value.trim(),
+      action: $("laction").value.trim(), q: $("lq").value.trim(),
+    });
+    if (!d.ok) return setMsg("lmsg", d.msg, false);
+    const box = $("logs");
+    box.textContent = "";
+    if (!d.logs.length) box.appendChild(el("div", { text: "没有符合条件的记录", cls: "small" }));
+    d.logs.forEach((l) => {
+      box.appendChild(el("div", { text: (l.t || "-") + "  [" + (l.action || "") + "]  " +
+        (l.user || "") + "  " + (l.target || "") + "  " + (l.detail || "") + "  " + (l.ip || "") }));
+    });
+    const shown = d.logs.length;
+    setMsg("lmsg", (d.total === shown ? "共 " + d.total + " 条" : "匹配 " + d.total + " 条, 显示最近 " + shown + " 条"),
+      true);
+  } catch (e) {}
+}
+
+// ============ 改密码 ============
+const PWD_FIELDS = ["opw", "npw", "npw2"];
+function openPwd(force) {
+  $("pwdTitle").textContent = force ? "首次登录：请修改初始密码" : "修改密码";
+  PWD_FIELDS.forEach((id) => {
+    $(id).value = "";
+    $(id).type = "password";   // 每次打开都收回明文, 别把上次看到的密码留着
+  });
+  $("pwdMsg").textContent = "";
+  $("pwdMask").classList.remove("hidden");
+  $(force ? "opw" : "npw").focus();
+}
+// 与服务端 pwd_problem() 同规则, 先在前端拦一道, 免得打错一位要重新提交
+function pwd_problem_client(pw) {
+  if (pw.length < 8) return "新密码至少 8 位";
+  if (pw.length > 64) return "新密码过长 (最多 64 位)";
+  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return "新密码需同时包含字母和数字";
+  if (/^\s|\s$/.test(pw)) return "新密码首尾不能是空格";
+  return "";
+}
+async function doChangePwd() {
+  const o = $("opw").value, n = $("npw").value, c = $("npw2").value;
+  if (!o) return setMsg("pwdMsg", "请输入原密码", false);
+  const prob = pwd_problem_client(n);
+  if (prob) return setMsg("pwdMsg", prob, false);
+  if (n === o) return setMsg("pwdMsg", "新密码不能与原密码相同", false);
+  if (n !== c) return setMsg("pwdMsg", "两次输入的新密码不一致", false);
+  const d = await api("/api/admin/change_password", { old_password: o, new_password: n });
+  if (!d.ok) return setMsg("pwdMsg", d.msg, false);
+  setMsg("pwdMsg", "密码已更新，其他设备上的登录已失效", true);
+  ME.must_change = false;
+  setTimeout(() => { $("pwdMask").classList.add("hidden"); loadKeys(); }, 1200);
+}
+["eyeO:opw", "eyeN:npw", "eyeN2:npw2"].forEach((pair) => {
+  const [btn, input] = pair.split(":");
+  $(btn).addEventListener("click", () => {
+    const i = $(input);
+    i.type = i.type === "password" ? "text" : "password";
+  });
+});
+PWD_FIELDS.forEach((id) => $(id).addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doChangePwd();
+}));
+
+// ============ 绑定 ============
+$("btnLogin").addEventListener("click", doLogin);
+["lu", "lp"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); }));
+$("btnLogout").addEventListener("click", onLogout);
+$("btnPwd").addEventListener("click", () => openPwd(false));
+$("btnGen").addEventListener("click", gen);
+$("btnSearch").addEventListener("click", () => { PAGE = 1; loadKeys(); });
+$("btnMemberSearch").addEventListener("click", () => loadMembers());
+$("mq").addEventListener("keydown", (e) => { if (e.key === "Enter") loadMembers(); });
+$("btnOrderSearch").addEventListener("click", () => loadOrders());
+["oq", "ouser"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") loadOrders(); }));
+$("btnExport").addEventListener("click", exportCSV);
+$("prev").addEventListener("click", () => { if (PAGE > 1) { PAGE--; loadKeys(); } });
+$("next").addEventListener("click", () => { if (PAGE * SIZE < TOTAL) { PAGE++; loadKeys(); } });
+$("btnUserCreate").addEventListener("click", async () => {
+  const d = await api("/api/admin/users/create", {
+    username: $("nu").value, password: $("np").value, role: $("nr").value, note: $("nn").value,
+  });
+  if (!d.ok) return setMsg("umsg", d.msg, false);
+  setMsg("umsg", d.msg, true);
+  $("nu").value = ""; $("np").value = ""; $("nn").value = "";
+  loadUsers();
+});
+$("btnLogs").addEventListener("click", loadLogs);
+$("btnLogSearch").addEventListener("click", loadLogs);
+["luser", "laction", "lq"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") loadLogs(); }));
+$("noteCancel").addEventListener("click", () => $("noteMask").classList.add("hidden"));
+$("noteOk").addEventListener("click", doNote);
+$("noteVal").addEventListener("keydown", (e) => { if (e.key === "Enter") doNote(); });
+$("extCancel").addEventListener("click", () => $("extMask").classList.add("hidden"));
+$("extOk").addEventListener("click", doExtend);
+document.querySelectorAll("#extMask .row button[data-a]").forEach((b) => {
+  b.addEventListener("click", () => {
+    $("extAmt").value = b.dataset.a;
+    $("extUnit").value = b.dataset.u === "hour" ? "hour" : "day";
+  });
+});
+$("pwdCancel").addEventListener("click", () => {
+  if (ME && ME.must_change) return setMsg("pwdMsg", "必须修改密码后才能使用", false);
+  $("pwdMask").classList.add("hidden");
+});
+$("pwdOk").addEventListener("click", doChangePwd);
+</script>
+</body>
+</html>

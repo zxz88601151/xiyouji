@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星云设计 · 会员中心 (MVP)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#111821; --panel2:#0e141c; --line:#1e2937;
+    --text:#e6edf3; --dim:#8b9bb0; --accent:#4f9cf9; --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#14263c 0%,var(--bg) 55%);
+       color:var(--text);font:14px/1.6 system-ui,"Segoe UI","Microsoft YaHei",sans-serif;min-height:100vh}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+         padding:22px 28px;border-bottom:1px solid var(--line);background:rgba(10,14,19,.7)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+        background:linear-gradient(135deg,#4f9cf9,#7c5cff);font-size:20px;font-weight:700}
+  h1{font-size:17px;margin:0;letter-spacing:.3px}
+  .sub{margin:2px 0 0;color:var(--dim);font-size:12.5px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;
+        border:1px solid var(--line);background:var(--panel);font-size:12.5px;color:var(--dim)}
+  .chip::before{content:"";width:8px;height:8px;border-radius:50%;background:#64748b}
+  .chip.on{color:#bbf7d0;border-color:#14532d;background:#0b1f13}
+  .chip.on::before{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .chip.err{color:#fecaca;border-color:#7f1d1d;background:#1f0b0b}
+  .chip.err::before{background:var(--bad)}
+  main{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:16px;
+       padding:20px 28px 40px;max-width:1420px;margin:0 auto}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card h2{display:flex;align-items:center;gap:10px;font-size:14.5px;margin:0 0 4px}
+  .num{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;
+       background:#17263a;color:var(--accent);font-size:12px;font-weight:700}
+  .hint{margin:0 0 12px;color:var(--dim);font-size:12.5px}
+  .hint code{background:#0b1219;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+  .row{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+  .row.one{grid-template-columns:1fr}
+  label{display:block;font-size:12px;color:var(--dim);margin-bottom:4px}
+  input,select{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+               background:#0b1219;color:var(--text);font:inherit;font-size:13px;outline:none}
+  input:focus,select:focus{border-color:#2f6fb3;box-shadow:0 0 0 3px rgba(79,156,249,.14)}
+  input[readonly]{color:var(--dim)}
+  .btns{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+  button{padding:9px 15px;border-radius:9px;border:1px solid #24507d;background:#15304d;
+         color:#dbeafe;font:inherit;font-size:13px;cursor:pointer;transition:.15s}
+  button:hover{background:#1b3d62;border-color:#3272b3}
+  button.primary{background:linear-gradient(135deg,#2f6fb3,#4f9cf9);border-color:#4f9cf9;color:#04121f;font-weight:600}
+  button.primary:hover{filter:brightness(1.08)}
+  button.ghost{background:transparent;border-color:var(--line);color:var(--dim)}
+  button.ghost:hover{color:var(--text);border-color:#33506f}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .msg{min-height:18px;margin:10px 0 0;font-size:12.5px;color:var(--dim);word-break:break-all}
+  .msg.ok{color:#86efac}.msg.bad{color:#fca5a5}.msg.warn{color:#fcd34d}
+  .token{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+  .acct dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:12px 0 0;font-size:13px}
+  .acct dt{color:var(--dim);font-size:12.5px}
+  .acct dd{margin:0;word-break:break-all}
+  .state{font-weight:600}
+  .state.active{color:var(--ok)}.state.expired,.state.banned{color:var(--bad)}
+  .state.none{color:var(--warn)}
+  .log{max-height:520px;overflow:auto}
+  .entry{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-top:9px;background:var(--panel2)}
+  .entry .line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+  .verb{font-weight:700;color:var(--accent)}
+  .code{color:var(--dim)}
+  .code.g200{color:#86efac}.code.g4{color:#fca5a5}.code.g5{color:#fca5a5}
+  .meta{color:#5f7389;font-size:11.5px}
+  details{margin-top:6px}
+  summary{cursor:pointer;color:var(--dim);font-size:12px;outline:none}
+  pre{margin:7px 0 0;padding:9px;border-radius:8px;background:#080d13;border:1px solid var(--line);
+      font:11.5px/1.55 ui-monospace,Consolas,monospace;color:#a9bad0;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto}
+  .empty{color:#5f7389;font-size:12.5px;margin-top:8px}
+  .cfg{font-size:12.5px;color:var(--dim)}
+  .cfg b{color:#c9d6e4;font-weight:500}
+  .cfg p{margin:4px 0}
+  .sep{height:1px;background:var(--line);margin:12px 0}
+  .note{font-size:12px;color:#5f7389;margin-top:10px}
+  @media (max-width:980px){main{grid-template-columns:1fr;padding:16px 14px 32px}header{padding:16px 14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">◈</div>
+    <div>
+      <h1>星云设计 · 会员中心</h1>
+      <p class="sub">第三方平台 MVP —— 账号、登录、时长全部托管给授权后台, 本平台不存密码</p>
+    </div>
+  </div>
+  <span id="chip" class="chip">未连接</span>
+</header>
+
+<main>
+  <section class="col">
+    <div class="card">
+      <h2><span class="num">0</span>连接检查</h2>
+      <p class="hint">服务端用 <code>app_id</code> + secret 对 <code>GET /api/open/v1/ping</code> 做 HMAC 签名。签名不对后台会直接 401。</p>
+      <div class="btns"><button id="btnPing" class="primary">检查连通</button></div>
+      <p id="pingMsg" class="msg"></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">1</span>账号同步 (代注册)</h2>
+      <p class="hint">本平台的用户主键 <code>external_id</code> 映射到后台账号。同一 ID 重复调用只会返回现状, 不会造第二个号。</p>
+      <div class="row">
+        <div><label>external_id (本平台用户 ID)</label><input id="regExt" value="shop_10086"></div>
+        <div><label>本站用户名 (留空自动生成)</label><input id="regUser" placeholder="u_xxxxxxxx"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label>初始密码 (留空后台生成)</label><input id="regPw" value="DemoPass2026"></div>
+        <div><label>安全码 (可选, 8-32 位含字母数字)</label><input id="regRc" value="DemoRc2026"></div>
+      </div>
+      <div class="btns">
+        <button id="btnReg" class="primary">注册 / 同步</button>
+        <button id="btnFillLogin" class="ghost" disabled>填入登录卡</button>
+      </div>
+      <p id="regMsg" class="msg"></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span>查询状态</h2>
+      <p class="hint">本平台要判断"这人能不能用某个功能", 只看 <code>state</code> + <code>remaining</code>, 不自己算到期时间。</p>
+      <div class="row">
+        <div><label>external_id</label><input id="stExt" value="shop_10086"></div>
+        <div style="display:flex;align-items:flex-end"><button id="btnStatus" style="width:100%">查询</button></div>
+      </div>
+      <p id="stMsg" class="msg"></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">3</span>购买会员 (权益同步)</h2>
+      <p class="hint">模拟支付成功后, 把订阅折算成秒调 <code>users/extend</code>。订单带 <code>request_id</code>, 重复提交不会加两次时长。注意 extend 只加时长, 不改套餐名 (套餐名来自本站下单)。</p>
+      <div class="row">
+        <div><label>external_id</label><input id="buyExt" value="shop_10086"></div>
+        <div><label>套餐</label>
+          <select id="buyDays">
+            <option value="7">周卡 · 7 天</option>
+            <option value="30" selected>月卡 · 30 天</option>
+            <option value="90">季卡 · 90 天</option>
+            <option value="365">年卡 · 365 天</option>
+          </select>
+        </div>
+      </div>
+      <div class="btns">
+        <button id="btnBuy" class="primary">模拟支付并同步</button>
+        <button id="btnBuyAgain" class="ghost" disabled>重复提交上一笔</button>
+      </div>
+      <p id="buyMsg" class="msg"></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">4</span>登录</h2>
+      <p class="hint">走 <code>auth/login</code>, 与客户端登录是同一条核心路径 (限流、换绑扣时、审计一致)。机器码变了会扣 6 小时。</p>
+      <div class="row">
+        <div><label>用户名</label><input id="lgUser" value="demo_member"></div>
+        <div><label>密码</label><input id="lgPw" value="DemoPass2026" type="password"></div>
+      </div>
+      <div class="row one" style="margin-top:10px">
+        <div><label>机器码 (8-32 位字母数字)</label><input id="lgMachine" value="HZDEMO0001"></div>
+      </div>
+      <div class="btns"><button id="btnLogin" class="primary">登录</button></div>
+      <p id="lgMsg" class="msg"></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">5</span>令牌校验</h2>
+      <p class="hint"><code>auth/verify</code> 问"这人是谁、还有多久"; 下面第二颗按钮把同一个 token 直接打到客户端接口 <code>/api/auth/me</code>, 证明是同一套登录。</p>
+      <div class="row one">
+        <div><label>token</label><input id="tkVal" readonly placeholder="先登录"></div>
+      </div>
+      <div class="btns">
+        <button id="btnVerify">开放接口校验</button>
+        <button id="btnMe">直接调客户端 /api/auth/me</button>
+      </div>
+      <p id="tkMsg" class="msg"></p>
+    </div>
+  </section>
+
+  <aside class="col">
+    <div class="card acct">
+      <h2>当前账号</h2>
+      <div id="acctEmpty" class="empty">还没有查询过账号。</div>
+      <dl id="acctList" hidden>
+        <dt>本站用户名</dt><dd id="aUser">—</dd>
+        <dt>external_id</dt><dd id="aExt">—</dd>
+        <dt>状态</dt><dd><span id="aState" class="state none">—</span></dd>
+        <dt>套餐</dt><dd id="aPlan">—</dd>
+        <dt>剩余时长</dt><dd id="aRem">—</dd>
+        <dt>到期时间</dt><dd id="aExp">—</dd>
+        <dt>绑定机器</dt><dd id="aMach">—</dd>
+        <dt>剩余换绑</dt><dd id="aRebind">—</dd>
+        <dt>安全码</dt><dd id="aRc">—</dd>
+      </dl>
+    </div>
+
+    <div class="card log">
+      <h2>签名调用日志 <span class="meta" id="logCount"></span></h2>
+      <div id="logList"><div class="empty">还没有调用。点上面的按钮开始。</div></div>
+    </div>
+
+    <div class="card cfg">
+      <h2>接入配置</h2>
+      <p>授权后台: <b id="cfgBase">—</b></p>
+      <p>app_id: <b id="cfgApp">—</b></p>
+      <p>secret: <b id="cfgSec">—</b> <span class="meta">(只在服务端, 不下发浏览器)</span></p>
+      <div class="sep"></div>
+      <p class="note">本页是本地 MVP: 订单表在内存里, 重启清零; 密钥是演示值。生产要把 secret 放进环境变量/密钥管理, 订单落库并加唯一索引。</p>
+    </div>
+  </aside>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const DAY = 86400;
+let TOKEN = "";
+let LAST_REQ = "";
+let ACCOUNT = { user: "", external_id: "" };
+
+function setMsg(id, text, kind) {
+  const el = $(id);
+  el.textContent = text || "";
+  el.className = "msg" + (kind ? " " + kind : "");
+}
+
+function fmtDur(sec) {
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  if (!sec) return "0 分钟";
+  const d = Math.floor(sec / DAY), h = Math.floor((sec % DAY) / 3600), m = Math.floor((sec % 3600) / 60);
+  const out = [];
+  if (d) out.push(d + " 天");
+  if (h) out.push(h + " 小时");
+  if (!d && m) out.push(m + " 分钟");
+  return out.join(" ") || "< 1 分钟";
+}
+
+// 后台的 expires_at 是毫秒时间戳 (与 user_remaining 的秒口径不同)
+function fmtTime(ms) {
+  if (!ms) return "—";
+  const d = new Date(Number(ms));
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+function stateText(s) {
+  return ({ active: "生效中", expired: "已到期", none: "未开通", banned: "已封禁" })[s] || s || "—";
+}
+
+function setChip(kind, text) {
+  const c = $("chip");
+  c.className = "chip" + (kind ? " " + kind : "");
+  c.textContent = text;
+}
+
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return r.json();
+}
+
+function renderExchange(entry) {
+  if (!entry) return;
+  const list = $("logList");
+  const empty = list.querySelector(".empty");
+  if (empty) empty.remove();
+
+  const box = document.createElement("div");
+  box.className = "entry";
+  const line = document.createElement("div");
+  line.className = "line";
+  const verb = document.createElement("span");
+  verb.className = "verb";
+  verb.textContent = entry.method;
+  const pathEl = document.createElement("span");
+  pathEl.textContent = entry.path;
+  const code = document.createElement("span");
+  code.className = "code " + (entry.status === 200 ? "g200" : entry.status >= 500 ? "g5" : "g4");
+  code.textContent = String(entry.status || 0);
+  const meta = document.createElement("span");
+  meta.className = "meta";
+  meta.textContent = entry.ms + " ms" + (entry.signed ? " · nonce " + entry.nonce : " · 未签名(客户端接口)");
+  line.append(verb, pathEl, code, meta);
+
+  const det = document.createElement("details");
+  const sum = document.createElement("summary");
+  sum.textContent = "请求 / 响应 JSON";
+  const pre = document.createElement("pre");
+  pre.textContent = "req  " + JSON.stringify(entry.req || {}) + "\nresp " + JSON.stringify(entry.resp || {});
+  det.append(sum, pre);
+  box.append(line, det);
+  list.prepend(box);
+  while (list.children.length > 12) list.lastElementChild.remove();
+  $("logCount").textContent = "· #" + entry.id;
+}
+
+function absorb(data) {
+  if (!data) return;
+  let dirty = false;
+  for (const k of ["user", "external_id", "state", "plan_name", "remaining", "expires_at", "machine", "rebind_left", "rc_set"]) {
+    if (Object.prototype.hasOwnProperty.call(data, k)) {
+      ACCOUNT[k] = data[k];
+      dirty = true;
+    }
+  }
+  if (dirty) renderAccount();
+}
+
+function renderAccount() {
+  if (!ACCOUNT.user && !ACCOUNT.external_id && !ACCOUNT.state) return;
+  $("acctEmpty").hidden = true;
+  $("acctList").hidden = false;
+  $("aUser").textContent = ACCOUNT.user || "—";
+  $("aExt").textContent = ACCOUNT.external_id || "—";
+  const st = ACCOUNT.state || "none";
+  const se = $("aState");
+  se.textContent = stateText(st);
+  se.className = "state " + st;
+  $("aPlan").textContent = ACCOUNT.plan_name || "—";
+  $("aRem").textContent = fmtDur(ACCOUNT.remaining);
+  $("aExp").textContent = fmtTime(ACCOUNT.expires_at);
+  $("aMach").textContent = ACCOUNT.machine || "未绑定";
+  $("aRebind").textContent = ACCOUNT.rebind_left === undefined ? "—" : ACCOUNT.rebind_left + " 次";
+  $("aRc").textContent = ACCOUNT.rc_set ? "已设置" : "未设置";
+  if (ACCOUNT.external_id) {
+    $("stExt").value = ACCOUNT.external_id;
+    $("buyExt").value = ACCOUNT.external_id;
+  }
+  if (ACCOUNT.user) $("lgUser").value = ACCOUNT.user;
+}
+
+async function callOp(op, payload, msgId, okText) {
+  let d;
+  try {
+    d = await api("/api/call", Object.assign({ op }, payload || {}));
+  } catch (e) {
+    setMsg(msgId, "本地 MVP 服务不可用: " + e.message, "bad");
+    return null;
+  }
+  renderExchange(d.entry);
+  const resp = (d.entry && d.entry.resp) || {};
+  if (resp.ok) {
+    absorb(resp);
+    setMsg(msgId, okText || "成功", "ok");
+  } else {
+    setMsg(msgId, (resp.msg || "失败") + (resp.code ? " (" + resp.code + ")" : ""), "bad");
+  }
+  return resp;
+}
+
+// ---- 0 连接 ----
+$("btnPing").addEventListener("click", async () => {
+  setMsg("pingMsg", "请求中...");
+  const r = await callOp("ping", {}, "pingMsg", "");
+  if (r && r.ok) {
+    setMsg("pingMsg", "握手成功 · api=" + r.api + " · " + r.endpoints.length + " 个接口可用", "ok");
+    setChip("on", "已连接 " + r.app_id);
+  } else {
+    setChip("err", "连接失败");
+  }
+});
+
+// ---- 1 注册 ----
+$("btnReg").addEventListener("click", async () => {
+  const payload = {
+    external_id: $("regExt").value.trim(),
+    username: $("regUser").value.trim(),
+    password: $("regPw").value,
+    recovery: $("regRc").value.trim(),
+    note: "MVP 演示平台",
+  };
+  setMsg("regMsg", "请求中...");
+  const r = await callOp("register", payload, "regMsg", "");
+  if (!r || !r.ok) return;
+  if (r.initial_password) {
+    setMsg("regMsg", "已创建 " + r.user + " · 初始密码 " + r.initial_password + " (只出现这一次)", "warn");
+    $("btnFillLogin").disabled = false;
+    $("btnFillLogin").dataset.u = r.user;
+    $("btnFillLogin").dataset.p = r.initial_password;
+  } else {
+    setMsg("regMsg", (r.created ? "已创建 " : "已存在, 返回现状: ") + r.user, "ok");
+  }
+  $("lgUser").value = r.user;
+});
+
+$("btnFillLogin").addEventListener("click", () => {
+  $("lgUser").value = $("btnFillLogin").dataset.u || "";
+  $("lgPw").value = $("btnFillLogin").dataset.p || "";
+  setMsg("regMsg", "已填入登录卡", "ok");
+});
+
+// ---- 2 状态 ----
+$("btnStatus").addEventListener("click", async () => {
+  setMsg("stMsg", "请求中...");
+  const r = await callOp("status", { external_id: $("stExt").value.trim() }, "stMsg", "");
+  if (!r || !r.ok) return;
+  if (r.remaining > 0) setMsg("stMsg", "状态 " + stateText(r.state) + " · 剩余 " + fmtDur(r.remaining), "ok");
+  else setMsg("stMsg", "状态 " + stateText(r.state) + " · 剩余 0 (新同步账号初始无时长, 先买一笔)", "warn");
+});
+
+// ---- 3 购买 ----
+$("btnBuy").addEventListener("click", async () => {
+  LAST_REQ = (crypto.randomUUID ? crypto.randomUUID() : "req_" + Date.now());
+  await buy(LAST_REQ);
+});
+$("btnBuyAgain").addEventListener("click", async () => {
+  if (!LAST_REQ) return;
+  const before = ACCOUNT.remaining;
+  await buy(LAST_REQ);
+  if (ACCOUNT.remaining !== undefined && before !== undefined && Math.abs(ACCOUNT.remaining - before) < 5)
+    setMsg("buyMsg", $("buyMsg").textContent + " · 剩余时长未变化, 幂等生效", "ok");
+});
+
+async function buy(rid) {
+  setMsg("buyMsg", "支付并同步中...");
+  let d;
+  try {
+    d = await api("/api/purchase", {
+      external_id: $("buyExt").value.trim(),
+      days: Number($("buyDays").value),
+      request_id: rid,
+    });
+  } catch (e) {
+    setMsg("buyMsg", "本地 MVP 服务不可用: " + e.message, "bad");
+    return;
+  }
+  renderExchange(d.entry);
+  if (!d.ok) {
+    setMsg("buyMsg", d.msg || "同步失败", "bad");
+    return;
+  }
+  $("btnBuyAgain").disabled = false;
+  if (d.duplicate) {
+    setMsg("buyMsg", "重复订单 " + d.order.request_id.slice(0, 12) + "... · 未再次加时长 (幂等) · 剩余 " + fmtDur(d.order.remaining), "warn");
+    ACCOUNT.remaining = d.order.remaining;
+    renderAccount();
+    return;
+  }
+  setMsg("buyMsg", "已同步 " + d.order.days + " 天 · 剩余 " + fmtDur(d.order.remaining), "ok");
+  ACCOUNT.remaining = d.order.remaining;
+  ACCOUNT.external_id = d.order.external_id;
+  renderAccount();
+  // 买完顺手拉一次状态, 让套餐名/到期时间也更新 (多一条真实调用)
+  await callOp("status", { external_id: d.order.external_id }, "stMsg", "购买后已刷新状态");
+}
+
+// ---- 4 登录 ----
+$("btnLogin").addEventListener("click", async () => {
+  setMsg("lgMsg", "登录中...");
+  const r = await callOp("login", {
+    username: $("lgUser").value.trim(),
+    password: $("lgPw").value,
+    machine: $("lgMachine").value.trim(),
+  }, "lgMsg", "");
+  if (!r || !r.ok) return;
+  TOKEN = r.token || "";
+  $("tkVal").value = TOKEN;
+  const extra = r.rebound ? " · 换绑扣时 " + fmtDur(r.cost_seconds) : "";
+  setMsg("lgMsg", "登录成功 · 剩余 " + fmtDur(r.remaining) + extra, r.rebound ? "warn" : "ok");
+  ACCOUNT.external_id = r.external_id || ACCOUNT.external_id;
+  renderAccount();
+});
+
+// ---- 5 校验 ----
+$("btnVerify").addEventListener("click", async () => {
+  if (!TOKEN) return setMsg("tkMsg", "先登录拿 token", "warn");
+  setMsg("tkMsg", "校验中...");
+  const r = await callOp("verify", { token: TOKEN, machine: $("lgMachine").value.trim() }, "tkMsg", "");
+  if (r && r.ok) setMsg("tkMsg", "有效 · " + r.user + " · 剩余 " + fmtDur(r.remaining), "ok");
+});
+$("btnMe").addEventListener("click", async () => {
+  if (!TOKEN) return setMsg("tkMsg", "先登录拿 token", "warn");
+  setMsg("tkMsg", "请求客户端接口...");
+  const r = await callOp("me", { token: TOKEN, machine: $("lgMachine").value.trim() }, "tkMsg", "");
+  if (r && r.ok) setMsg("tkMsg", "客户端接口同样认可该 token · 剩余 " + fmtDur(r.remaining), "ok");
+});
+
+// ---- 启动: 拉配置并自动握手 ----
+(async () => {
+  try {
+    const info = await api("/api/info", {});
+    if (info.ok) {
+      $("cfgBase").textContent = info.base;
+      $("cfgApp").textContent = info.app_id;
+      $("cfgSec").textContent = info.secret_mask;
+    }
+  } catch (e) {}
+  $("btnPing").click();
+})();
+</script>
+</body>
+</html>

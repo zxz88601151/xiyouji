@@ -1,0 +1,25 @@
+[package]
+name = "multisync-desktop"
+version = "0.1.0"
+description = "阿信电脑同步器桌面端（Tauri 2）"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+winreg = "0.52"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_SystemInformation"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

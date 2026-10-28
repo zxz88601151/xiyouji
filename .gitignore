@@ -1,0 +1,37 @@
+# ---- Python 运行时 / 产物 ----
+__pycache__/
+*.pyc
+*.pyo
+
+# ---- PyInstaller 构建产物 ----
+build/
+dist/
+
+# ---- 运行时状态 / 敏感数据（严禁入库）----
+config.json
+audit.log
+server/data/
+server/testdata/
+
+# ---- 审计工作区（历史备份快照、截图、日志，非源码）----
+audit/
+
+# ---- Tauri / Node 桌面端 ----
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+
+# ---- 日志 ----
+*.log
+
+# ---- WorkBuddy 工作区数据 ----
+.workbuddy/
+.workbuddy-ai/
+
+# ---- 系统杂物 ----
+Thumbs.db
+.DS_Store
+
+# ---- MVP 运行时数据（含 token/密码，严禁入库）----
+mvp/.data/
