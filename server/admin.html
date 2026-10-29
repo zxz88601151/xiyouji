@@ -267,6 +267,16 @@ code { background: #f1f4f9; border: 1px solid var(--line); padding: 2px 6px; bor
     </table>
   </div>
 
+  <div class="card" id="openCard">
+    <h2>开放接口 (Open API)</h2>
+    <div class="row" style="margin-bottom:8px">
+      <button class="sm" id="btnOpenRefresh">刷新状态</button>
+      <button class="sm" id="btnOpenSelftest">签名自检</button>
+      <span id="omsg" class="small"></span>
+    </div>
+    <div id="openBody" class="small" style="line-height:1.9">加载中…</div>
+  </div>
+
   <div class="card">
     <h2>操作审计日志</h2>
     <div class="row" style="margin-bottom:8px">
@@ -505,6 +515,7 @@ function enterMain() {
   loadMembers(); loadOrders();
   if (ME.role === "owner") loadUsers();
   loadLogs();
+  loadOpenApi();
 }
 function onLogout() {
   fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
@@ -594,6 +605,61 @@ function renderKeys() {
     tb.appendChild(tr);
   });
 }
+// ============ 开放接口 (只读展示) ============
+async function loadOpenApi() {
+  const body = $("openBody");
+  body.textContent = "";
+  let d;
+  try {
+    d = await api("/api/admin/openapi/status", {});
+  } catch (e) { body.textContent = "加载失败: " + e.message; return; }
+  if (!d.ok) { body.textContent = "加载失败: " + (d.msg || "未知错误"); return; }
+  const stLine = el("div", {});
+  stLine.appendChild(document.createTextNode("状态: "));
+  stLine.appendChild(el("span", { text: d.enabled ? "已启用" : "未启用",
+    cls: d.enabled ? "st-active" : "st-unused" }));
+  if (!d.enabled) stLine.appendChild(document.createTextNode(" (服务器未配置 HZ_OPEN_APPS, /api/open/v1 全部返回 501)"));
+  body.appendChild(stLine);
+  body.appendChild(el("div", { text: "外部账号映射 (identities): " + (d.identities_total || 0) + " 条" }));
+  body.appendChild(el("div", { text: "端点: " + (d.endpoints || []).join(" / ") }));
+  if (d.apps && d.apps.length) {
+    const t = el("table", { style: "margin-top:8px" });
+    const head = el("tr", {});
+    ["app_id", "scope", "secret (掩码)", "代注册账号"].forEach((h) => head.appendChild(el("th", { text: h })));
+    t.appendChild(el("thead", {})).appendChild(head);
+    const tb = el("tbody", {});
+    for (const a of d.apps) {
+      const tr = el("tr", {});
+      tr.appendChild(el("td", {})).appendChild(el("code", { text: a.app_id }));
+      tr.appendChild(el("td", { text: (a.scopes || []).join(", ") }));
+      tr.appendChild(el("td", {})).appendChild(el("code", { text: a.secret }));
+      tr.appendChild(el("td", { text: a.users }));
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    body.appendChild(t);
+  }
+  if (d.recent && d.recent.length) {
+    body.appendChild(el("div", { text: "最近 OPEN_* 审计:", style: "margin-top:8px" }));
+    const box = el("div", { cls: "logs" });
+    for (const e of d.recent)
+      box.appendChild(el("div", { text: [e.t, "[" + e.action + "]", e.user, "→" + e.target, e.detail]
+        .filter((x) => x != null && x !== "").join("  ") }));
+    body.appendChild(box);
+  } else if (d.enabled) {
+    body.appendChild(el("div", { text: "最近无 OPEN_* 调用记录" }));
+  }
+  setMsg("omsg", "已更新 " + new Date().toLocaleTimeString("zh-CN"), true);
+}
+$("btnOpenRefresh").addEventListener("click", loadOpenApi);
+$("btnOpenSelftest").addEventListener("click", async () => {
+  setMsg("omsg", "自检中…", true);
+  try {
+    const d = await api("/api/admin/openapi/selftest", {});
+    setMsg("omsg", d.msg || (d.ok ? "通过" : "失败"), d.ok);
+  } catch (e) { setMsg("omsg", "自检失败: " + e.message, false); }
+});
+
 // ============ 会员管理 ============
 let MROWS = [];
 async function loadMembers() {
@@ -875,7 +941,7 @@ async function doChangePwd() {
   if (!d.ok) return setMsg("pwdMsg", d.msg, false);
   setMsg("pwdMsg", "密码已更新，其他设备上的登录已失效", true);
   ME.must_change = false;
-  setTimeout(() => { $("pwdMask").classList.add("hidden"); loadKeys(); }, 1200);
+  setTimeout(() => { $("pwdMask").classList.add("hidden"); loadKeys(); loadOpenApi(); }, 1200);
 }
 ["eyeO:opw", "eyeN:npw", "eyeN2:npw2"].forEach((pair) => {
   const [btn, input] = pair.split(":");

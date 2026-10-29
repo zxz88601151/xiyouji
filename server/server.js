@@ -1865,6 +1865,72 @@ const server = http.createServer(async (req, res) => {
         return json_res(res, 200, { ok: true });
       }
 
+      // ---- 开放接口状态 (只读展示, secret 只回掩码) ----
+      if (p === "/api/admin/openapi/status") {
+        const d = A("viewer", "openapi_status"); if (d) return d;
+        const mask = (s) => (s && s.length > 8 ? s.slice(0, 4) + "****" + s.slice(-4) : "****");
+        const identCount = (appId) => {
+          let n = 0;
+          for (const k of Object.keys(identities)) if (k.split("|")[0] === appId) n++;
+          return n;
+        };
+        const apps = Object.entries(OPEN_APPS).map(([id, c]) => ({
+          app_id: id, scopes: [...c.scopes], secret: mask(c.secret), users: identCount(id),
+        }));
+        let recent = [];
+        try {
+          const lines = fs.readFileSync(AUDIT_FILE, "utf8").trim().split("\n").filter(Boolean);
+          for (let i = lines.length - 1; i >= 0 && recent.length < 10; i--) {
+            try {
+              const e = JSON.parse(lines[i]);
+              if (String(e.action || "").startsWith("OPEN_")) recent.push(e);
+            } catch (x) {}
+          }
+        } catch (x) {}
+        return json_res(res, 200, {
+          ok: true, enabled: apps.length > 0, apps,
+          identities_total: Object.keys(identities).length,
+          endpoints: ["ping", "users/register", "users/status", "users/extend",
+                      "auth/verify", "auth/login"],
+          recent,
+        });
+      }
+      // ---- 开放接口签名自检: 服务端用真实 secret 走一次本机回环 ping ----
+      if (p === "/api/admin/openapi/selftest") {
+        const d = A("viewer", "openapi_selftest"); if (d) return d;
+        if (!Object.keys(OPEN_APPS).length)
+          return json_res(res, 200, { ok: false, msg: "开放接口未启用 (服务器未配置 HZ_OPEN_APPS)" });
+        const appId = Object.keys(OPEN_APPS)[0];
+        const secret = OPEN_APPS[appId].secret;
+        const ts = String(Date.now());
+        const nonce = crypto.randomBytes(12).toString("hex");
+        const rawBody = "{}";
+        const sig = open_sign("POST", "/api/open/v1/ping", appId, ts, nonce, rawBody, secret);
+        const loop = http.request({
+          host: "127.0.0.1", port: PORT, path: "/api/open/v1/ping", method: "POST",
+          headers: {
+            "Content-Type": "application/json", "Content-Length": Buffer.byteLength(rawBody),
+            "x-app-id": appId, "x-timestamp": ts, "x-nonce": nonce, "x-signature": sig,
+          },
+        }, (r2) => {
+          let b = "";
+          r2.on("data", (c) => (b += c));
+          r2.on("end", () => {
+            let j = {};
+            try { j = JSON.parse(b); } catch (x) {}
+            json_res(res, 200, {
+              ok: j.ok === true, http: r2.statusCode, app_id: appId,
+              msg: j.ok === true ? "签名自检通过 (本机 ping ok)" : "自检失败: " + (j.msg || b.slice(0, 120)),
+            });
+          });
+        });
+        loop.on("error", (e) => json_res(res, 200, { ok: false, msg: "回环请求失败: " + e.message }));
+        // 坑: 声明了 Content-Length 就必须在 end() 里带上请求体,
+        // 否则对端 read_body 永远等不够字节, 双向死等 → 接口挂死。
+        loop.end(rawBody);
+        return;
+      }
+
       // ---- 审计日志 ----
       if (p === "/api/admin/audit") {
         const d = A("admin", "audit"); if (d) return d;
