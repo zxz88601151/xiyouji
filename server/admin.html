@@ -6,43 +6,44 @@
 <title>阿信电脑同步器 · KEY 授权管理后台</title>
 <style>
 :root {
-  --bg: #0f1115; --bg2: #15181e; --card: #191d24; --card2: #1f242c;
-  --line: #2a303a; --line2: #363d49;
-  --txt: #e6e9ef; --txt2: #98a1b0; --txt3: #6b7484;
-  --pri: #4c8dff; --pri-d: #3a78e8; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --purple: #c084fc;
+  --bg: #f2f5fa; --bg2: #ffffff; --card: #ffffff; --card2: #f6f8fc;
+  --line: #e2e7f0; --line2: #d0d8e6;
+  --txt: #1d2532; --txt2: #57637a; --txt3: #8a94a8;
+  --pri: #2f6fe0; --pri-d: #255cbf; --ok: #16a34a; --warn: #d97706; --bad: #dc2626; --purple: #9333ea;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--txt); font-size: 13px;
   font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background-image: radial-gradient(1000px 500px at 15% -10%, rgba(76,141,255,.13), transparent 60%),
-                    radial-gradient(800px 400px at 100% 0%, rgba(192,132,252,.08), transparent 55%);
+  background-image: radial-gradient(1000px 500px at 15% -10%, rgba(47,111,224,.08), transparent 60%),
+                    radial-gradient(800px 400px at 100% 0%, rgba(147,51,234,.05), transparent 55%);
   background-attachment: fixed;
 }
 input, select, button { font-family: inherit; font-size: 13px; }
 input, select {
-  background: #12151b; color: var(--txt); border: 1px solid var(--line);
+  background: #ffffff; color: var(--txt); border: 1px solid var(--line2);
   border-radius: 8px; padding: 9px 11px; outline: none; transition: border-color .15s, box-shadow .15s;
 }
-input:focus, select:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(76,141,255,.16); }
+input:focus, select:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(47,111,224,.14); }
 input::placeholder { color: var(--txt3); }
 button {
-  background: var(--card2); color: var(--txt); border: 1px solid var(--line2);
+  background: #ffffff; color: var(--txt); border: 1px solid var(--line2);
   border-radius: 8px; padding: 8px 14px; cursor: pointer; transition: all .15s;
 }
-button:hover:not(:disabled) { background: #2a313c; border-color: #454e5d; }
+button:hover:not(:disabled) { background: #eef3fb; border-color: #b9c6dd; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 button.pri { background: var(--pri); border-color: var(--pri); color: #fff; font-weight: 500; }
 button.pri:hover:not(:disabled) { background: var(--pri-d); border-color: var(--pri-d); }
 button.sm { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
-button.danger:hover:not(:disabled) { background: #46202a; border-color: var(--bad); color: #ffb4b4; }
+button.danger:hover:not(:disabled) { background: #fdecec; border-color: var(--bad); color: var(--bad); }
 
 /* ===== 顶栏 ===== */
 .topbar {
   display: flex; align-items: center; gap: 12px; padding: 12px 22px;
-  border-bottom: 1px solid var(--line); background: rgba(21,24,30,.85);
+  border-bottom: 1px solid var(--line); background: rgba(255,255,255,.88);
   backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5;
+  box-shadow: 0 1px 8px rgba(29,37,50,.06);
 }
 .logo {
   width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none;
@@ -53,59 +54,60 @@ button.danger:hover:not(:disabled) { background: #46202a; border-color: var(--ba
 .spacer { flex: 1; }
 .who { color: var(--txt2); font-size: 12px; }
 .who b { color: var(--txt); font-weight: 500; }
-.role { display: inline-block; padding: 1px 7px; border-radius: 5px; background: #233047; color: #8ab4ff; font-size: 11px; margin-left: 4px; }
+.role { display: inline-block; padding: 1px 7px; border-radius: 5px; background: #e8f0ff; color: var(--pri); font-size: 11px; margin-left: 4px; }
 
 /* ===== 登录 ===== */
 .loginWrap { min-height: calc(100vh - 55px); display: flex; align-items: center; justify-content: center; padding: 30px 20px; }
 .loginCard {
   width: 380px; background: var(--card); border: 1px solid var(--line);
-  border-radius: 16px; padding: 34px 30px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  border-radius: 16px; padding: 34px 30px 26px; box-shadow: 0 18px 48px rgba(29,37,50,.10);
 }
 .loginCard .lLogo { width: 46px; height: 46px; border-radius: 13px; margin: 0 auto 14px; display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--pri), #7c5cff); box-shadow: 0 8px 22px rgba(76,141,255,.32); }
+  background: linear-gradient(135deg, var(--pri), #7c5cff); box-shadow: 0 8px 22px rgba(47,111,224,.28); }
 .lTitle { text-align: center; font-size: 19px; font-weight: 600; letter-spacing: 1px; }
 .lSub { text-align: center; color: var(--txt3); font-size: 12px; margin-top: 5px; letter-spacing: 2px; }
 .field { margin-top: 16px; position: relative; }
 .field label { display: block; color: var(--txt2); font-size: 12px; margin-bottom: 6px; }
 .field input { width: 100%; }
-.field .ic { position: absolute; left: 11px; bottom: 9px; opacity: .5; }
+.field .ic { position: absolute; left: 11px; bottom: 9px; opacity: .55; }
 .field .ic ~ input { padding-left: 33px; }
 .toggleEye { position: absolute; right: 8px; bottom: 6px; background: none; border: none; color: var(--txt3); padding: 4px 6px; }
 .toggleEye:hover { background: none; color: var(--txt); }
 .btnLogin { width: 100%; margin-top: 20px; padding: 11px; font-size: 14px; }
 .alert { display: none; margin-top: 14px; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
 .alert.show { display: block; }
-.alert.err { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #ffb4b4; }
-.alert.ok { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.35); color: #a7f3c6; }
-.alert.info { background: rgba(76,141,255,.1); border: 1px solid rgba(76,141,255,.3); color: #a9c8ff; }
+.alert.err { background: #fdecec; border: 1px solid #f5b5b5; color: #b42323; }
+.alert.ok { background: #e9f9ef; border: 1px solid #a9dfc0; color: #14713c; }
+.alert.info { background: #eaf2ff; border: 1px solid #b9d2f7; color: #1d4fa8; }
 .lFoot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--txt3); font-size: 11px; line-height: 1.7; }
 
 /* ===== 主面板 ===== */
 .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 40px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(29,37,50,.05); }
 .card h2 { font-size: 13px; font-weight: 600; margin: 0 0 12px; color: var(--txt2); letter-spacing: .5px;
   display: flex; align-items: center; gap: 8px; }
 .card h2::before { content: ""; width: 3px; height: 13px; border-radius: 2px; background: var(--pri); }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .stats { display: flex; gap: 10px; flex-wrap: wrap; }
 .stat { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; min-width: 92px; }
-.stat b { display: block; font-size: 20px; font-weight: 600; color: #fff; }
+.stat b { display: block; font-size: 20px; font-weight: 600; color: var(--txt); }
 .stat span { color: var(--txt3); font-size: 11px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 8px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
 th { color: var(--txt3); font-weight: 500; font-size: 11px; letter-spacing: .5px; }
-tbody tr:hover { background: rgba(255,255,255,.02); }
-code { background: #12151b; border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; font-family: Consolas, monospace; font-size: 12px; }
+tbody tr:hover { background: rgba(47,111,224,.045); }
+code { background: #f1f4f9; border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; font-family: Consolas, monospace; font-size: 12px; color: #33415c; }
 .st-unused { color: var(--warn); } .st-active { color: var(--ok); } .st-banned { color: var(--bad); } .st-expired { color: var(--purple); }
 .hidden { display: none !important; }
 .small { font-size: 11px; color: var(--txt3); }
 .msg { color: var(--ok); font-size: 12px; } .msg.err { color: var(--bad); }
 .pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
 .logs { max-height: 250px; overflow: auto; font-family: Consolas, monospace; font-size: 11.5px; color: var(--txt2); }
-.logs div { padding: 4px 0; border-bottom: 1px solid #20252d; }
+.logs div { padding: 4px 0; border-bottom: 1px solid #eef1f6; }
 .made { margin-top: 10px; line-height: 2; }
-.mask { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(2px); }
-.modal { background: var(--card); border: 1px solid var(--line2); border-radius: 14px; padding: 20px; width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.mask { position: fixed; inset: 0; background: rgba(29,37,50,.38); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(2px); }
+.modal { background: var(--card); border: 1px solid var(--line2); border-radius: 14px; padding: 20px; width: 400px; box-shadow: 0 20px 50px rgba(29,37,50,.18); }
 .modal h3 { margin: 0 0 12px; font-size: 14px; }
 </style>
 </head>
@@ -139,14 +141,14 @@ code { background: #12151b; border: 1px solid var(--line); padding: 2px 6px; bor
     <div class="field">
       <label for="lu">管理员账号</label>
       <span class="ic">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#98a1b0" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c8698" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </span>
       <input id="lu" placeholder="请输入账号" autocomplete="username" spellcheck="false">
     </div>
     <div class="field">
       <label for="lp">登录密码</label>
       <span class="ic">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#98a1b0" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c8698" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </span>
       <input id="lp" type="password" placeholder="请输入密码" autocomplete="current-password">
       <button class="toggleEye" id="btnEye" title="显示/隐藏密码">
